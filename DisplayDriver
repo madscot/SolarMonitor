@@ -1,0 +1,46 @@
+// from captain-slow.dk
+display <- hardware.uart12;
+display.configure(9600, 8, PARITY_NONE, 1, NO_RX);
+ 
+display.write("CL"); display.write(0x01); //Clear display
+ 
+display.write("SF"); display.write(0); display.write(0x01); //Set font 6,10,18,51,120,123,0
+ 
+display.write("CS0"); display.write(0x01); //Cursor off
+ 
+display.write("SC1"); display.write(0x01); //Set graphics to white
+ 
+display.write("TP"); display.write(0); display.write(0); display.write(0x01); //Move to collum 0 row 0
+display.write("TT" + "SSID: " + imp.getssid()); display.write(0x00); // Write text
+ 
+display.write("TP"); display.write(2); display.write(1); //Move to collum 2 row 1
+display.write("TT" + "dB: "); display.write(0x00); // Write text
+ 
+function progressBar(barX, barY, barHeight, barWidth, border, percentage)
+{
+  barSplit <- ((((barWidth-2)-(border*2))/100.0)*percentage).tointeger();
+ 
+  display.write("SC1"); display.write(0x01);
+  display.write("DR"); display.write(barX); display.write(barY); display.write(barX + barWidth); display.write(barY + barHeight); display.write(0x01);
+ 
+  if (barSplit > 0)
+  {
+    display.write("FR"); display.write(barX+border+1); display.write(barY+border+1); display.write(barX+1+border+barSplit); display.write(barY+1+border + barHeight-2-(border*2)); display.write(0x01);
+  }
+  if (percentage < 100)
+  {
+    display.write("SC0"); display.write(0x01);
+    display.write("FR"); display.write((barX+border+1)+(barSplit+1)); display.write(barY+1+border); display.write((barX+barWidth)-1); display.write(barY+barHeight-(border*2)); display.write(0x01);
+  }
+}
+ 
+function updateDisplay()
+{
+  local wifiDB = imp.rssi() + 87;
+  wifiDB = (87.0/100.0) * wifiDB;
+ 
+  progressBar(49, 14, 8, 77, 1, wifiDB)
+ 
+  imp.wakeup(0.1, updateDisplay);
+}
+updateDisplay();
